@@ -1,0 +1,151 @@
+---
+title: "R_dataunderstand"
+author: "Peng-Jhen"
+date: "2024-10-09"
+output: html_document
+---
+## 1.set up
+### 1.1 library
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(data.table)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(stringr)
+```
+
+### 1.2 load data
+```{r}
+train = fread("~/Desktop/python/Kaggle_comptete/02_Data/original_data/train.csv")
+test_original = fread("~/Desktop/python/Kaggle_comptete/02_Data/original_data/test.csv")
+```
+
+## 2. organize data
+### 2.1 split the data by id
+```{r}
+personal_data_train = split(train,train$p_num)
+personal_data_test = split(test,test$p_num)
+```
+
+### 2.2 function
+```{r}
+long_form_fun = function(seq_x,list_data,train){
+  temp1 = personal_data_test[[1]]
+  ### day counts ###
+  
+  temp1$time_temp = hms(temp1$time)
+  day = c()
+  k = 1
+  check_day = c()
+  for(i in 2:nrow(temp1)){
+    if(temp1$time_temp[i] <= temp1$time_temp[i - 1]){
+      day[i] = k + 1
+      k = k + 1
+      check_day[i] = i
+    }else{
+      day[i] = k
+    }
+  }
+
+  day[1] = 1
+  temp1$day = day
+  max_time = max(temp1$day)
+
+  ### time sequence ###
+  time_sequence <- seq(from = as.POSIXct("00:00:00", format = "%H:%M:%S", origin ="1970-01-01"),
+                     to = as.POSIXct("23:55:00", format = "%H:%M:%S", origin = "1970-01-01"),
+                     by = "5 min")
+  time_sequence_data <- data.frame(time_seq = rep(format(time_sequence, "%H:%M:%S"),max_time),
+                            day = sort(rep(seq(1,max_time),288)),
+                            bg_measure = rep(NA,288*max_time))
+  
+ 
+  ### organize prediction column ###
+  if(train==T){
+    prediction_col = temp1 %>% 
+    select(id,p_num,time,day,`bg+1:00`) %>% 
+    mutate(time_pre = hms(time),
+          add_time = as.numeric(time_pre+hours(1)),
+          day_new = ifelse(add_time>=86400,day+1,day),
+          new_output = sprintf("%02d:%02d:%02d", (add_time %/% 3600) %% 24 ,     # 小時
+                                      (add_time %% 3600) %/% 60,               # 分鐘
+                                      add_time %% 60)) %>% 
+      select(id,p_num,new_output,day_new,`bg+1:00`) %>% 
+      rename(bg = `bg+1:00`,
+             day = day_new,
+             time = new_output)
+  }
+  
+  ### wide-form to long-form ###
+  wide_col = colnames(temp1)[4:507]
+  temp1 <- temp1 %>%
+    pivot_longer(cols = all_of(wide_col),
+                 names_to = c(".value", "type"),   # 將變量名分為兩部分: 值和類型
+                names_pattern = "(.*)-(.*)") 
+  
+  temp1 = temp1 %>%
+    mutate(type_time = str_pad(type, width = 5, pad = "0"),     # 確保時間格式為hh:mm
+           type_time = paste0(type_time, ":00"),                 # 添加秒 ":00"
+           type_time = hms(type_time),
+           time1 = hms(time),
+           time_final = as.numeric(time1 - type_time),
+           time_final_sec = ifelse(time_final < 0, time_final + 86400, time_final), 
+           time_final1 = sprintf("%02d:%02d:%02d", (time_final_sec %/% 3600) %% 24 ,    # 小時
+                                      (time_final_sec %% 3600) %/% 60,               # 分鐘
+                                      time_final_sec %% 60),
+         activity = ifelse(activity=="",NA,activity)) 
+  
+  temp2 = temp1 %>% 
+  mutate(day_new = case_when(time_final<0 ~ day - 1,
+                             time_final>= 86400 ~ day + 1, 
+                             .default = day),
+         time_final_sort = hms(time_final1)) %>% 
+    arrange(day_new,time_final_sort) %>% 
+    distinct(day_new,time_final_sort,.keep_all = T) %>% 
+    full_join(.,time_sequence_data, by = c("day_new" = "day","time_final1" = "time_seq"))%>% 
+    arrange(day_new,time_final1) %>% 
+    mutate(time_final_sort =hms(time_final1)) %>% 
+    arrange(day_new,time_final_sort) %>% 
+    mutate(bg_final = ifelse(!is.na(bg),bg,bg_measure))
+  
+
+    temp3 = data.frame(id = c(temp2$id),
+                       p_num = c(temp2$p_num),
+                    time = c(temp2$time_final1),
+                    day = c(temp2$day_new),
+                    bg = c(temp2$bg_final)) %>% 
+      mutate(time_sort = hms(time))  %>% 
+      arrange(day,time_sort)  %>% 
+      distinct(day,time_sort,.keep_all = T)
+  
+  
+    temp4 = temp3 %>%
+    select(-time_sort) %>% 
+    left_join(.,temp2[,c("p_num","time_final1","day_new","insulin","carbs","hr","steps","cals","activity")], by = c("p_num","time" = "time_final1","day" = "day_new"))
+  
+    if(train==T){
+      return(list("x_train" = temp4, "y_train" = prediction_col))
+    }else{
+      return(list("x_train" = temp4))
+    }
+}
+
+```
+
+
+### 2.3 organize data
+```{r}
+personal_data_train_long = lapply(seq(personal_data_train),function(x){
+  temp = long_form_fun(x,personal_data_train,train = T)
+})
+
+personal_data_test_long = lapply(seq(personal_data_test),function(x){
+  temp = long_form_fun(x,personal_data_test,train = F)
+})
+
+saveRDS(personal_data_train_long,"~/Desktop/python/Kaggle_comptete/02_Data/Temp/personal_data_train_long.rds")
+
+saveRDS(personal_data_test_long,"~/Desktop/python/Kaggle_comptete/02_Data/Temp/personal_data_test_long.rds")
+```
+

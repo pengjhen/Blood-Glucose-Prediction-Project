@@ -1,0 +1,156 @@
+---
+title: "R_AutoArima"
+author: "Peng-Jhen"
+date: "2024-10-27"
+output: html_document
+---
+
+## 1.set
+### 1.1 library
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(forecast)
+library(ggplot2)
+library(tseries)
+library(dplyr)
+library(data.table)
+library(stringr)
+library(zoo)
+library(FRACTION)
+library(mice)
+```
+
+### 1.2 data
+```{r}
+train_long = readRDS("~/Desktop/python/Kaggle_comptete/02_Data/Temp/personal_data_train_long.rds")
+test_long = readRDS("~/Desktop/python/Kaggle_comptete/02_Data/Temp/personal_data_test_long.rds")
+train = fread("~/Desktop/python/Kaggle_comptete/02_Data/original_data/train.csv")
+```
+
+## 2. normalize data
+### 2.1 plot
+```{r}
+x_train_long = list()
+x_complete = list()
+for(i in 1:length(train_long)){
+  temp = train_long[[i]]$x_train %>% 
+    select(-c(id,carbs,steps,activity)) %>% 
+    mutate(new_pnum = grep("p",unique(p_num),value = T)) %>% 
+    select(-p_num) %>% 
+    mutate(in_10min = rollmean(insulin, 2, fill = NA, align = "right"),
+          in_30min = rollmean(insulin, 6, fill = NA, align = "right"),
+          in_60min = rollmean(insulin, 12, fill = NA, align = "right"),
+          hr_10min = rollmean(hr, 2, fill = NA, align = "right"),
+          hr_30min = rollmean(hr, 6, fill = NA, align = "right"),
+          hr_60min = rollmean(hr, 12, fill = NA, align = "right"),
+          cal_10min = rollmean(cals, 2, fill = NA, align = "right"),
+          cal_30min = rollmean(cals, 6, fill = NA, align = "right"),
+          cal_60min = rollmean(cals, 12, fill = NA, align = "right"))
+  
+  x_train_long[[i]] = mice(temp,m = 20,seed = 2024)
+  
+  long_data <- complete(x_train_long[[i]], action = "long", include = TRUE)%>%
+    filter(`.imp`!= 0) 
+  
+  x_complete[[i]] = long_data
+}
+
+saveRDS(x_complete,"~/Desktop/python/Kaggle_comptete/02_Data/Temp/x_complete.rds")
+x_train_long_combine = do.call(rbind,x_complete)
+
+# 對各插補結果計算平均值
+completed_data <- x_train_long_combine %>%
+  group_by(new_pnum,day,time) %>%
+  summarise(bg_mean = mean(bg),
+            insulin_mean = mean(insulin),
+            hr_mean = mean(hr),
+            cals_mean = mean(cals),
+            in_10min_mean = mean(in_10min),
+            in_30min_mean = mean(in_30min),
+            in_60min_mean = mean(in_60min),
+            hr_10min_mean = mean(hr_10min),
+            hr_30min_mean = mean(hr_30min),
+            hr_60min_mean = mean(hr_60min),
+            cal_10min_mean = mean(cal_10min),
+            cal_30min_mean = mean(cal_30min),
+            cal_60min_mean = mean(cal_60min)
+            )
+
+completed_data$index = seq(1,nrow(completed_data),1)
+
+completed_data1 =completed_data %>% 
+  mutate(bg_10min_mean = na.locf(rollmean(bg_mean, 2, fill = NA, align = "right"),fromLast = TRUE),
+         bg_30min_mean = na.locf(rollmean(bg_mean, 6, fill = NA, align = "right"),fromLast = TRUE),
+         bg_60min_mean = na.locf(rollmean(bg_mean, 12, fill = NA, align = "right"),fromLast = TRUE)
+  )
+
+real_data = list()
+for(i in 1:length(train_long)){
+    real_data[[i]] =  complete(x_train_long[[i]], action = "long", include = TRUE)%>%
+      filter(`.imp`== 0) 
+}
+real_data_df = do.call(rbind,real_data)
+
+```
+
+### 2.2 normalize
+```{r}
+#Series = p01_train_impute["bg"]
+
+# N = nrow(completed_data)
+# n = round(N *0.75, digits = 0)
+# train = completed_data[1:n, ]
+# test  = completed_data[(n+1):N,  ]
+# check = real_data_df[(n+1):N,  ]
+train = completed_data1 %>% 
+  filter(day<=75) 
+test = completed_data1 %>% 
+  filter(!index %in% train$index)
+fwrite(train,"~/Desktop/python/Kaggle_comptete/02_Data/Temp/train_ARIMA.csv")
+fwrite(test,"~/Desktop/python/Kaggle_comptete/02_Data/Temp/test_ARIMA.csv")
+
+real_data_test = real_data_df %>% 
+  mutate(index = seq(1,nrow(real_data_df)),1) %>% 
+  filter(day>75)
+fwrite(real_data_test,"~/Desktop/python/Kaggle_comptete/02_Data/Temp/real_data_test_ARIMA.csv")
+
+```
+
+```{r}
+adf.test(completed_data$bg_mean)
+```
+
+```{r}
+# x = p01_train[,c(9:11)] %>% as.matrix()
+# y = p01_train$bg_impute'
+x = train[,c(5:16,18:20)] %>% as.matrix()
+y = train$bg_mean
+
+auto_arima_test_comple = auto.arima(y,d = 0, max.p = 10, max.q = 15 ,start.p = 5,start.q = 5, xreg = x)
+
+summary(auto_arima_test_comple)
+```
+
+```{r}
+x_test = test[,c(5:16,18:20)] %>% as.matrix()
+y_test = test$bg_mean
+test_predict = forecast(auto_arima_test_comple, xreg = x_test )
+
+test_predict_df = data.frame(fitted = test_predict$mean)
+
+#new_test =  cbind(test %>% select(bg),test_predict_df)
+new_test =  cbind(real_data_test ,test_predict_df)
+nrow(test_predict_df)
+new_test1 = new_test %>% filter(!is.na(bg)) %>% 
+  mutate(mse = abs(bg-fitted)^2) %>% 
+  relocate(fitted,.after = bg)
+
+sum(new_test1$mse)/nrow(new_test1)
+
+# arima on test data, xreg : insulin, heart rate, cals, bg 10 min, 30min: RMSE =  0.5156101
+# arima on test data, xreg : insulin, heart rate, cals, bg 10 min, 30min, 60min: RMSE =   0.4858761
+
+check = real_data_test %>% 
+  filter(new_pnum == "p10",day == 80)
+```
+
