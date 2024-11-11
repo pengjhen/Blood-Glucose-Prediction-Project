@@ -3,18 +3,16 @@ This project aims to predict blood glucose levels for patients with Type I diabe
 
 ## Project Goals:
 The primary objectives of this project are to practice and refine skills in Python and machine learning, focusing on time-series forecasting and deep learning, and to gain insights into the performance of traditional statistical, machine learning, and deep learning models for time-series data.
-
-### Enhance Machine Learning and Python Skills: 
 This project is part of my journey to deepen my expertise in Python and machine learning, specifically in time-series prediction tasks. By implementing multiple model types, I aim to build a stronger understanding of different forecasting techniques.
+
+### Main outcome - Blood Glucose Prediction: 
+Assess how each model performs in predicting future blood glucose levels. The goal is to evaluate the practical applications and performance differences between traditional statistical, machine learning, and deep learning approaches for this type of health-related data.
 
 ### Model Comparison: 
 Implement and evaluate three different time-series models to identify strengths and limitations:
 1. ARIMA (AutoRegressive Integrated Moving Average), a classic statistical model for time-series forecasting, using R.
 2. LSTM (Long Short-Term Memory), a type of recurrent neural network that is well-suited for sequential data, using Python.
 3. XGBoost: A machine learning algorithm known for its high performance with structured data, using Python.
-
-### Blood Glucose Prediction: 
-Assess how each model performs in predicting future blood glucose levels. The goal is to evaluate the practical applications and performance differences between traditional statistical, machine learning, and deep learning approaches for this type of health-related data.
 
 ## Project Structure
 
