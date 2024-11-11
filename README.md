@@ -1,18 +1,26 @@
 # Blood Glucose Prediction Project
-This project focuses on predicting blood glucose levels for patients with Type I diabetes. The aim is to explore and compare different time-series forecasting methods, specifically by using ARIMA models implemented in R and LSTM (Long Short-Term Memory) models built with Python. The dataset used in this analysis is sourced from the Kaggle competition on blood glucose prediction.
+This project aims to predict blood glucose levels for patients with Type I diabetes by exploring and comparing several time-series forecasting methods. Specifically, it uses three approaches: ARIMA models implemented in R, Long Short-Term Memory (LSTM) models in Python, and XGBoost, a popular machine learning algorithm for structured data. The dataset used for this analysis comes from a Kaggle competition focused on blood glucose prediction.
 
-The primary goal of this project is to practice and refine skills in Python and machine learning, particularly in time-series forecasting and deep learning techniques. Through this project, I aim to enhance my understanding of both traditional statistical models and deep learning approaches for time-series data, as well as the strengths and limitations of each.
+## Project Goals:
+The primary objectives of this project are to practice and refine skills in Python and machine learning, focusing on time-series forecasting and deep learning, and to gain insights into the performance of traditional statistical, machine learning, and deep learning models for time-series data.
 
-### Project Goals
+### Enhance Machine Learning and Python Skills: 
+This project is part of my journey to deepen my expertise in Python and machine learning, specifically in time-series prediction tasks. By implementing multiple model types, I aim to build a stronger understanding of different forecasting techniques.
 
-Develop Machine Learning and Python Skills: This project is part of my journey to deepen my expertise in Python and machine learning, particularly focusing on time-series prediction tasks.
-  1. Model Comparison: Implement and evaluate two different time-series models:
-     ARIMA (AutoRegressive Integrated Moving Average), a classic statistical model for time-series forecasting, using R.
-     LSTM (Long Short-Term Memory), a type of recurrent neural network suited for sequential data, using Python.
-     XGboost: ...
+### Model Comparison: 
+Implement and evaluate three different time-series models to identify strengths and limitations:
+1. ARIMA (AutoRegressive Integrated Moving Average), a classic statistical model for time-series forecasting, using R.
+2. LSTM (Long Short-Term Memory), a type of recurrent neural network that is well-suited for sequential data, using Python.
+3. XGBoost: A machine learning algorithm known for its high performance with structured data, using Python.
 
-  2. Blood Glucose Prediction: Explore how each model performs in predicting future blood glucose levels, with the goal of gaining insights into the practical applications and performance differences between traditional statistical and deep learning models.
+### Blood Glucose Prediction: 
+Assess how each model performs in predicting future blood glucose levels. The goal is to evaluate the practical applications and performance differences between traditional statistical, machine learning, and deep learning approaches for this type of health-related data.
 
-###  reference
-kaggle competition:
-www.kaggle.com/competitions/brist1d/overview/$citation
+## Project Structure
+
+1. 00_data_preprocess.ipynb: Preprocesses and organizes the dataset.
+2. 01_LSTM.ipynb: Implements and evaluates an LSTM model for blood glucose forecasting.
+3. 02_XGBoost.ipynb: Uses XGBoost to predict blood glucose levels and compares results to other models.
+4. R_AutoArima.Rmd: Implements an ARIMA model in R for blood glucose prediction.
+
+Through this project, I aim to develop a comprehensive understanding of different modeling techniques and their applications in time-series prediction for healthcare data.
