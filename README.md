@@ -19,6 +19,8 @@ Implement and evaluate three different time-series models to identify strengths 
 1. 00_data_preprocess.ipynb: Preprocesses and organizes the dataset.
 2. 01_LSTM.ipynb: Implements and evaluates an LSTM model for blood glucose forecasting.
 3. 02_XGBoost.ipynb: Uses XGBoost to predict blood glucose levels and compares results to other models.
-4. R_AutoArima.Rmd: Implements an ARIMA model in R for blood glucose prediction.
+4. 03_TabNet.ipynb: This experiment includes an exploration of TabNet, but I am still in the process of fully understanding its usage and potential applications in this context.
+5. R_AutoArima.Rmd: Implements an ARIMA model in R for blood glucose prediction.
+
 
 Through this project, I aim to develop a comprehensive understanding of different modeling techniques and their applications in time-series prediction for healthcare data.
