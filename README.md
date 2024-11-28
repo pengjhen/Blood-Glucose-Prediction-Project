@@ -19,8 +19,12 @@ Implement and evaluate three different time-series models to identify strengths 
 1. 00_data_preprocess.ipynb: Preprocesses and organizes the dataset.
 2. 01_LSTM.ipynb: Implements and evaluates an LSTM model for blood glucose forecasting.
 3. 02_XGBoost.ipynb: Uses XGBoost to predict blood glucose levels and compares results to other models.
-4. 03_TabNet.ipynb: This experiment includes an exploration of TabNet, but I am still in the process of fully understanding its usage and potential applications in this context.
-5. R_AutoArima.Rmd: Implements an ARIMA model in R for blood glucose prediction.
+4. 03_TabNet.ipynb: Demonstrates the best performance among the these models, making it particularly suitable for tabular data.
+   TabNet employs an encoder-decoder architecture designed for tabular datasets. The encoder consists of two main components:  
+    - **Feature Transformer**: Extracts high-level feature representations.  
+    - **Attentive Transformer**: Dynamically selects the most important features for learning through sparse attention mechanisms.  
+   This unique architecture not only ensures high performance but also enhances interpretability by identifying key features contributing to predictions.  
+6. R_AutoArima.Rmd: Implements an ARIMA model in R for blood glucose prediction.
 
 
 Through this project, I aim to develop a comprehensive understanding of different modeling techniques and their applications in time-series prediction for healthcare data.
